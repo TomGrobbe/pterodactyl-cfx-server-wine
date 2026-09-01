@@ -16,7 +16,7 @@ CORECLR_CHANNEL="${CORECLR_CHANNEL:-csharp_improvements}"
 DOWNLOAD_SERVER_DATA="${DOWNLOAD_SERVER_DATA:-1}"
 LICENSE_KEY="${LICENSE_KEY:-}"
 SERVER_PORT="${SERVER_PORT:-30120}"
-SCRIPT_REVISION="2026-09-01.3"
+SCRIPT_REVISION="2026-09-01.4"
 
 mkdir -p "${SERVER_DIR}"
 exec > >(tee -a "${SERVER_DIR}/install.log") 2>&1
@@ -42,7 +42,7 @@ fi
 
 cd "${SERVER_DIR}"
 
-WORK="$(mktemp -d)"
+WORK="$(mktemp -d -p "${SERVER_DIR}" .cfx-install.XXXXXX)"
 trap 'rm -rf "${WORK}"' EXIT
 
 BUILD_NUMBER=""
@@ -80,16 +80,18 @@ download_channel() {
 download_channel "${CFX_CHANNEL}" "${WORK}/base.zip"
 BASE_BUILD="${BUILD_NUMBER}"
 
-download_channel "${CORECLR_CHANNEL}" "${WORK}/coreclr.zip"
-CORECLR_BUILD="${BUILD_NUMBER}"
-
 echo "==> installing server binaries"
 rm -rf "${SERVER_DIR}/coreclr_server" "${SERVER_DIR}/system_resources"
 unzip -oq "${WORK}/base.zip" -d "${SERVER_DIR}"
+rm -f "${WORK}/base.zip"
+
+download_channel "${CORECLR_CHANNEL}" "${WORK}/coreclr.zip"
+CORECLR_BUILD="${BUILD_NUMBER}"
 
 echo "==> replacing coreclr_server from '${CORECLR_CHANNEL}'"
 rm -rf "${SERVER_DIR}/coreclr_server"
 unzip -oq "${WORK}/coreclr.zip" 'coreclr_server/*' -d "${SERVER_DIR}"
+rm -f "${WORK}/coreclr.zip"
 
 if [ ! -x "${SERVER_DIR}/cfx-server.exe" ] && [ ! -f "${SERVER_DIR}/cfx-server.exe" ]; then
     echo "!!! cfx-server.exe is missing after extraction"
@@ -106,6 +108,7 @@ if [ "${DOWNLOAD_SERVER_DATA}" = "1" ] && [ ! -d "${SERVER_DIR}/resources" ]; th
     curl -fL --retry 3 --retry-delay 5 --progress-bar -o "${WORK}/server-data.zip" "${SERVER_DATA_URL}"
     unzip -oq "${WORK}/server-data.zip" -d "${WORK}/server-data"
     mv "${WORK}/server-data/cfx-server-data-master/resources" "${SERVER_DIR}/resources"
+    rm -rf "${WORK}/server-data.zip" "${WORK}/server-data"
 fi
 
 mkdir -p "${SERVER_DIR}/resources"
