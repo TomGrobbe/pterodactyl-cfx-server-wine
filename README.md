@@ -128,21 +128,38 @@ delete packages. Create a personal access token with the `delete:packages` scope
 the repository as a secret named `GHCR_CLEANUP_TOKEN`, and the workflow picks it up on its
 own.
 
+## Two traps this egg already works around
+
+Both of these cost real debugging time, so they are written down here.
+
+**Downloads must not go in `/tmp`.** Wings mounts `/tmp` inside every container as a tmpfs,
+a small chunk of memory pretending to be a disk, and limits it to 100 MB by default through
+`docker.tmpfs_size` in the wings config. The server archives are about 83 MB each, so a
+normal `mktemp -d` fills that up and the download dies with
+`curl: (23) Failure writing output to destination`. The install then stops, and the server
+folder is left completely empty, with nothing in the panel explaining why. The installer
+therefore downloads into the server folder itself and deletes each archive as soon as it
+has unpacked it.
+
+**The image must be pushed without buildx attestations.** By default, buildx attaches a
+provenance attestation, which turns the published image into an index holding the real
+image plus an extra entry that reports its platform as `unknown/unknown`. Wings cannot
+resolve a usable image out of that, and fails at boot with `Finished pulling`, immediately
+followed by `No such image`. Setting `provenance: false` and `sbom: false` in the build
+publishes a single plain manifest, which works everywhere.
+
 ## If a server installs into an empty folder
 
-This almost always means the install container never ran, rather than the install
-script failing. Pterodactyl runs the installer in a throwaway container, and if your
-node cannot pull that container image, you get no output and no files.
+The installer writes `install.log` into the server folder, so open that first. It records
+the installer revision, the container it ran in, the free disk it saw, and every step. A
+failure prints a line starting with `!!!` naming the line it died on.
 
-The usual cause is Docker Hub, which limits anonymous pulls to 100 every 6 hours per
-address. A busy node hits that easily. This egg installs from
-`ghcr.io/pterodactyl/installers:debian` for that reason, because GitHub does not rate
-limit public pulls the same way.
-
-To see what really happened, look at the install log on the node, at
+If there is no `install.log` at all, the install container never ran. Check the node log at
 `/var/log/pterodactyl/install/<server-uuid>.log`, or run `journalctl -u wings -n 200`.
-A pull problem shows up as `toomanyrequests` or `manifest unknown`. A script problem
-prints a line starting with `!!!` naming the line it died on.
+A container that could not be pulled shows as `toomanyrequests` or `manifest unknown`.
+
+An empty `server.cfg` is a symptom, not a cause. Wings creates that file when it goes to
+rewrite the port lines and finds nothing there, which means the install had already failed.
 
 ## Things worth knowing
 
