@@ -52,11 +52,12 @@ check. The render step puts it into the JSON for you.
 1. Create a new repository on GitHub and push these files to a branch called `main`.
 2. The `build` workflow runs on its own. It builds the image and pushes it to the GitHub
    Container Registry as `ghcr.io/YOUR-ACCOUNT/cfx-server-wine`.
-3. **Make the package public.** This is the one step GitHub does not let a workflow do for
-   you. Go to your profile, open the **Packages** tab, click `cfx-server-wine`, then
-   **Package settings**, scroll to **Danger Zone** and choose **Change visibility**, then
-   **Public**. If you skip this, your Pterodactyl node cannot pull the image, because it
-   has no GitHub login.
+3. **Check that the package is public.** When the repository itself is public, GitHub
+   publishes the image as public straight away and there is nothing to do. If your
+   repository is private, the image starts out private too, and your Pterodactyl node
+   cannot pull it, because the node has no GitHub login. To flip it, go to your profile,
+   open the **Packages** tab, click `cfx-server-wine`, then **Package settings**, scroll
+   to **Danger Zone** and choose **Change visibility**, then **Public**.
 4. On that same settings page, check that the package is linked to this repository. That
    link is what lets the cleanup workflow delete old versions using the built in token.
 
