@@ -16,6 +16,16 @@ CORECLR_CHANNEL="${CORECLR_CHANNEL:-csharp_improvements}"
 DOWNLOAD_SERVER_DATA="${DOWNLOAD_SERVER_DATA:-1}"
 LICENSE_KEY="${LICENSE_KEY:-}"
 SERVER_PORT="${SERVER_PORT:-30120}"
+SCRIPT_REVISION="2026-09-01.3"
+
+mkdir -p "${SERVER_DIR}"
+exec > >(tee -a "${SERVER_DIR}/install.log") 2>&1
+
+echo "==> cfx installer revision ${SCRIPT_REVISION}"
+echo "==> container: $(grep PRETTY_NAME /etc/os-release | cut -d= -f2- | tr -d '"')"
+echo "==> running as uid $(id -u), target ${SERVER_DIR}"
+echo "==> channels: ${CFX_CHANNEL} and ${CORECLR_CHANNEL}"
+df -h "${SERVER_DIR}" || true
 
 MISSING=""
 for tool in curl jq unzip; do
@@ -30,7 +40,6 @@ else
     echo "==> curl, jq and unzip are already present"
 fi
 
-mkdir -p "${SERVER_DIR}"
 cd "${SERVER_DIR}"
 
 WORK="$(mktemp -d)"
@@ -131,5 +140,5 @@ printf 'base %s (build %s), coreclr %s (build %s)\n' \
     "${CORECLR_CHANNEL}" "${CORECLR_BUILD:-unknown}" > "${SERVER_DIR}/.cfx-build"
 
 echo "==> done: $(cat "${SERVER_DIR}/.cfx-build")"
-echo "==> contents of ${SERVER_DIR}"
+echo "==> install finished, contents of ${SERVER_DIR}"
 ls -la "${SERVER_DIR}"
