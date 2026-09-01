@@ -16,7 +16,7 @@ CORECLR_CHANNEL="${CORECLR_CHANNEL:-csharp_improvements}"
 DOWNLOAD_SERVER_DATA="${DOWNLOAD_SERVER_DATA:-1}"
 LICENSE_KEY="${LICENSE_KEY:-}"
 SERVER_PORT="${SERVER_PORT:-30120}"
-SCRIPT_REVISION="2026-09-01.4"
+SCRIPT_REVISION="2026-09-01.5"
 
 mkdir -p "${SERVER_DIR}"
 exec > >(tee -a "${SERVER_DIR}/install.log") 2>&1
@@ -113,7 +113,7 @@ fi
 
 mkdir -p "${SERVER_DIR}/resources"
 
-if [ ! -f "${SERVER_DIR}/server.cfg" ]; then
+if [ ! -s "${SERVER_DIR}/server.cfg" ]; then
     echo "==> writing a starter server.cfg"
     cat > "${SERVER_DIR}/server.cfg" <<CFG
 endpoint_add_tcp "0.0.0.0:${SERVER_PORT}"

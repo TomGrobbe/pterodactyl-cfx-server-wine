@@ -12,7 +12,7 @@
         "ghcr.io/OWNER/cfx-server-wine:latest": "ghcr.io/OWNER/cfx-server-wine:latest"
     },
     "file_denylist": [],
-    "startup": "wine cfx-server.exe +exec server.cfg",
+    "startup": "wine {{SERVER_EXECUTABLE}} +exec server.cfg",
     "config": {
         "files": "{\"server.cfg\": {\"parser\": \"file\", \"find\": {\"endpoint_add_tcp\": \"endpoint_add_tcp \\\"0.0.0.0:{{server.build.default.port}}\\\"\", \"endpoint_add_udp\": \"endpoint_add_udp \\\"0.0.0.0:{{server.build.default.port}}\\\"\"}}}",
         "startup": "{\"done\": \"Started resource\"}",
@@ -27,6 +27,16 @@
         }
     },
     "variables": [
+        {
+            "name": "Server executable",
+            "description": "The Windows binary that gets started. Enhanced builds use cfx-server.exe, older legacy builds used FXServer.exe.",
+            "env_variable": "SERVER_EXECUTABLE",
+            "default_value": "cfx-server.exe",
+            "user_viewable": true,
+            "user_editable": false,
+            "rules": "required|string|max:64",
+            "field_type": "text"
+        },
         {
             "name": "Server channel",
             "description": "Cfx depot channel the server binaries come from. 'main' is the current Enhanced release.",

@@ -79,6 +79,20 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Smoke test the published image
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          IMAGE="ghcr.io/${{ steps.vars.outputs.owner }}/${{ env.IMAGE_NAME }}:latest"
+          docker image rm "$IMAGE" > /dev/null 2>&1 || true
+          docker pull "$IMAGE"
+          docker run --rm --entrypoint bash "$IMAGE" -c 'wine --version'
+          MISSING=$(docker run --rm -e STARTUP='wine cfx-server.exe +exec server.cfg' "$IMAGE" 2>&1 || true)
+          echo "$MISSING"
+          echo "$MISSING" | grep -q "is not in /home/container"
+          UNSET=$(timeout 30 docker run --rm -e STARTUP='wine {{SERVER_EXECUTABLE}} +exec server.cfg' "$IMAGE" 2>&1 || true)
+          echo "$UNSET"
+          echo "$UNSET" | grep -q "no .exe left"
+
       - name: Render the egg
         run: python3 scripts/render-egg.py --owner "${{ steps.vars.outputs.owner }}"
 
