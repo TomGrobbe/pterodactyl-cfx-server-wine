@@ -22,7 +22,7 @@
     "scripts": {
         "installation": {
             "script": "",
-            "container": "debian:trixie-slim",
+            "container": "ghcr.io/pterodactyl/installers:debian",
             "entrypoint": "bash"
         }
     },

@@ -4,6 +4,8 @@ set -euo pipefail
 
 export DEBIAN_FRONTEND=noninteractive
 
+trap 'echo "!!! install failed on line ${LINENO}"' ERR
+
 DEPOT_BASE="https://depot.cfx.re/public/p/fxserver_gen9/u"
 ARTIFACT="cfx-server_win_x64.zip"
 SERVER_DATA_URL="https://github.com/citizenfx/cfx-server-data/archive/refs/heads/master.zip"
@@ -15,9 +17,18 @@ DOWNLOAD_SERVER_DATA="${DOWNLOAD_SERVER_DATA:-1}"
 LICENSE_KEY="${LICENSE_KEY:-}"
 SERVER_PORT="${SERVER_PORT:-30120}"
 
-echo "==> installing install-time tools"
-apt-get update -qq
-apt-get install -y -qq --no-install-recommends ca-certificates curl jq unzip > /dev/null
+MISSING=""
+for tool in curl jq unzip; do
+    command -v "${tool}" > /dev/null 2>&1 || MISSING="${MISSING} ${tool}"
+done
+
+if [ -n "${MISSING}" ]; then
+    echo "==> installing missing tools:${MISSING}"
+    apt-get update -qq
+    apt-get install -y -qq --no-install-recommends ca-certificates ${MISSING} > /dev/null
+else
+    echo "==> curl, jq and unzip are already present"
+fi
 
 mkdir -p "${SERVER_DIR}"
 cd "${SERVER_DIR}"
