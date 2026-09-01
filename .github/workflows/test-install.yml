@@ -45,6 +45,8 @@ jobs:
           test -f testserver/libnode26.dll
           test -f testserver/server.cfg
           test -f testserver/coreclr_server/CitizenFX.Host.Server.dll
+          test -d testserver/coreclr_server/runtime/shared/Microsoft.NETCore.App
+          ls testserver/coreclr_server/runtime/shared/Microsoft.NETCore.App/*/coreclr.dll
           test -d testserver/system_resources/chat
           test -d testserver/resources
           test -f testserver/.cfx-build

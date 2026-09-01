@@ -43,7 +43,7 @@
             "env_variable": "CFX_CHANNEL",
             "default_value": "main",
             "user_viewable": true,
-            "user_editable": false,
+            "user_editable": true,
             "rules": "required|string|max:64",
             "field_type": "text"
         },
@@ -53,7 +53,7 @@
             "env_variable": "CORECLR_CHANNEL",
             "default_value": "csharp_improvements",
             "user_viewable": true,
-            "user_editable": false,
+            "user_editable": true,
             "rules": "required|string|max:64",
             "field_type": "text"
         },

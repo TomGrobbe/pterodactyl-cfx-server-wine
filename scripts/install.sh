@@ -16,7 +16,7 @@ CORECLR_CHANNEL="${CORECLR_CHANNEL:-csharp_improvements}"
 DOWNLOAD_SERVER_DATA="${DOWNLOAD_SERVER_DATA:-1}"
 LICENSE_KEY="${LICENSE_KEY:-}"
 SERVER_PORT="${SERVER_PORT:-30120}"
-SCRIPT_REVISION="2026-09-01.5"
+SCRIPT_REVISION="2026-09-01.6"
 
 mkdir -p "${SERVER_DIR}"
 exec > >(tee -a "${SERVER_DIR}/install.log") 2>&1
@@ -101,6 +101,17 @@ fi
 if [ ! -f "${SERVER_DIR}/coreclr_server/CitizenFX.Host.Server.dll" ]; then
     echo "!!! coreclr_server looks incomplete after extraction"
     exit 1
+fi
+
+if [ ! -d "${SERVER_DIR}/coreclr_server/runtime/shared/Microsoft.NETCore.App" ]; then
+    echo "!!! the dotnet runtime under coreclr_server is missing after extraction"
+    exit 1
+fi
+
+if [ "${BASE_BUILD}" != "${CORECLR_BUILD}" ]; then
+    echo "--- note: server is build ${BASE_BUILD} but coreclr_server is build ${CORECLR_BUILD}"
+    echo "--- mixing builds can crash when a resource starts, if the two disagree"
+    echo "--- on the native interop between cfx-server.exe and the C# host"
 fi
 
 if [ "${DOWNLOAD_SERVER_DATA}" = "1" ] && [ ! -d "${SERVER_DIR}/resources" ]; then
