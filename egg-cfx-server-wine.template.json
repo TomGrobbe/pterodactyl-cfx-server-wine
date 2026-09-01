@@ -1,0 +1,81 @@
+{
+    "meta": {
+        "version": "PTDL_v2",
+        "update_url": null
+    },
+    "exported_at": "REPLACED_AT_RENDER_TIME",
+    "name": "Cfx Server (Windows, Wine)",
+    "author": "tom.grobbe@gmail.com",
+    "description": "Runs the Cfx for GTA V Enhanced Windows server (cfx-server.exe) under Wine on Linux. The base server is pulled from the Cfx depot 'main' channel, while everything inside coreclr_server is replaced with the 'csharp_improvements' build.",
+    "features": [],
+    "docker_images": {
+        "Wine 11.16 (Cfx Enhanced)": "ghcr.io/OWNER/cfx-server-wine:latest"
+    },
+    "file_denylist": [],
+    "startup": "wine cfx-server.exe +exec server.cfg",
+    "config": {
+        "files": "{\"server.cfg\": {\"parser\": \"file\", \"find\": {\"endpoint_add_tcp\": \"endpoint_add_tcp \\\"0.0.0.0:{{server.build.default.port}}\\\"\", \"endpoint_add_udp\": \"endpoint_add_udp \\\"0.0.0.0:{{server.build.default.port}}\\\"\"}}}",
+        "startup": "{\"done\": \"Started resource\"}",
+        "logs": "{}",
+        "stop": "quit"
+    },
+    "scripts": {
+        "installation": {
+            "script": "",
+            "container": "debian:trixie-slim",
+            "entrypoint": "bash"
+        }
+    },
+    "variables": [
+        {
+            "name": "Server channel",
+            "description": "Cfx depot channel the server binaries come from. 'main' is the current Enhanced release.",
+            "env_variable": "CFX_CHANNEL",
+            "default_value": "main",
+            "user_viewable": true,
+            "user_editable": false,
+            "rules": "required|string|max:64",
+            "field_type": "text"
+        },
+        {
+            "name": "C# runtime channel",
+            "description": "Cfx depot channel that the coreclr_server folder is taken from, overwriting the one from the server channel.",
+            "env_variable": "CORECLR_CHANNEL",
+            "default_value": "csharp_improvements",
+            "user_viewable": true,
+            "user_editable": false,
+            "rules": "required|string|max:64",
+            "field_type": "text"
+        },
+        {
+            "name": "Download default resources",
+            "description": "Download the cfx-server-data resources on a fresh install. Skipped when a resources folder already exists.",
+            "env_variable": "DOWNLOAD_SERVER_DATA",
+            "default_value": "1",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|boolean",
+            "field_type": "text"
+        },
+        {
+            "name": "License key",
+            "description": "Cfx license key from https://portal.cfx.re/. Only written into server.cfg when the installer creates that file, edit server.cfg to change it later.",
+            "env_variable": "LICENSE_KEY",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:128",
+            "field_type": "text"
+        },
+        {
+            "name": "Virtual display",
+            "description": "Start a virtual X display (Xvfb) before the server. Only needed if something you run wants a desktop, leave at 0 otherwise.",
+            "env_variable": "XVFB",
+            "default_value": "0",
+            "user_viewable": true,
+            "user_editable": false,
+            "rules": "required|in:0,1",
+            "field_type": "text"
+        }
+    ]
+}

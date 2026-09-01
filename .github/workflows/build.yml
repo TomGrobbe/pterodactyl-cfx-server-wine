@@ -1,0 +1,116 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'egg-cfx-server-wine.json'
+      - 'README.md'
+      - '.gitignore'
+  pull_request:
+    paths-ignore:
+      - 'egg-cfx-server-wine.json'
+      - 'README.md'
+      - '.gitignore'
+  workflow_dispatch:
+  schedule:
+    - cron: '0 4 * * 1'
+
+env:
+  IMAGE_NAME: cfx-server-wine
+  WINE_VERSION: '11.16'
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    outputs:
+      owner: ${{ steps.vars.outputs.owner }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Work out the image reference
+        id: vars
+        run: echo "owner=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build tags and labels
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ steps.vars.outputs.owner }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=wine${{ env.WINE_VERSION }},enable={{is_default_branch}}
+            type=raw,value=wine${{ env.WINE_VERSION }}-{{date 'YYYYMMDD'}}-${{ github.run_number }},enable={{is_default_branch}}
+            type=ref,event=tag
+            type=ref,event=pr
+          labels: |
+            org.opencontainers.image.title=${{ env.IMAGE_NAME }}
+            org.opencontainers.image.description=Cfx Enhanced Windows server on Wine ${{ env.WINE_VERSION }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: ${{ github.event_name != 'pull_request' }}
+          build-args: |
+            WINE_VERSION=${{ env.WINE_VERSION }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Render the egg
+        run: python3 scripts/render-egg.py --owner "${{ steps.vars.outputs.owner }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: egg-cfx-server-wine
+          path: egg-cfx-server-wine.json
+
+      - name: Commit the rendered egg
+        continue-on-error: true
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          if git diff --quiet -- egg-cfx-server-wine.json; then
+            echo "egg is unchanged"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add egg-cfx-server-wine.json
+          git commit -m "chore(egg): refresh rendered egg [skip ci]"
+          git push
+
+      - name: Attach the egg to the release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: egg-cfx-server-wine.json
+
+  cleanup:
+    needs: build
+    if: github.event_name != 'pull_request'
+    uses: ./.github/workflows/cleanup.yml
+    permissions:
+      packages: write
+    with:
+      keep: 5
+    secrets: inherit
