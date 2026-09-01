@@ -43,7 +43,7 @@ ENV USER=container \
     WINEPREFIX=/home/container/.wine \
     WINEARCH=win64 \
     WINEDEBUG=-all \
-    WINEDLLOVERRIDES="mscoree,mshtml=" \
+    WINEDLLOVERRIDES="mshtml=" \
     DISPLAY=:0 \
     DISPLAY_WIDTH=1024 \
     DISPLAY_HEIGHT=768 \

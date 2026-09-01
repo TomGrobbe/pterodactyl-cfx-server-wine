@@ -52,3 +52,18 @@ jobs:
           test -f testserver/.cfx-build
           cat testserver/.cfx-build
           echo "file count: $(find testserver -type f | wc -l)"
+
+      - name: Boot the server under wine and watch the C# host
+        if: matrix.container == 'ghcr.io/pterodactyl/installers:debian'
+        run: |
+          IMAGE="ghcr.io/tomgrobbe/cfx-server-wine:latest"
+          docker pull "$IMAGE"
+          sudo chmod -R 777 testserver
+          OUT=$(timeout 180 docker run --rm             -v "${GITHUB_WORKSPACE}/testserver:/home/container"             -e STARTUP='wine cfx-server.exe +exec server.cfg'             "$IMAGE" 2>&1 || true)
+          echo "$OUT"
+          echo "----- checking the C# host -----"
+          if echo "$OUT" | grep -q "load_assembly for Bootstrap failed"; then
+            echo "FAIL: the CoreCLR host could not load Bootstrap"
+            exit 1
+          fi
+          echo "no Bootstrap load failure seen"
