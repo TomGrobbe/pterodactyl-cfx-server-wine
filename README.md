@@ -42,6 +42,7 @@ anything, so a half finished or corrupted download cannot quietly become a broke
 | `egg-cfx-server-wine.json` | The finished egg. This is the file you import into Pterodactyl. |
 | `.github/workflows/build.yml` | Builds and publishes the image on every commit. |
 | `.github/workflows/cleanup.yml` | Deletes old image versions so your GitHub package storage stays small. |
+| `.github/workflows/test-install.yml` | Runs the installer the way wings runs it and checks the files really land. |
 
 The install script lives in its own `.sh` file rather than being pasted inside the egg
 JSON, because a shell script buried in a JSON string is painful to read and impossible to
@@ -126,6 +127,22 @@ If cleanup reports a permission error, your account is set up so the automatic t
 delete packages. Create a personal access token with the `delete:packages` scope, add it to
 the repository as a secret named `GHCR_CLEANUP_TOKEN`, and the workflow picks it up on its
 own.
+
+## If a server installs into an empty folder
+
+This almost always means the install container never ran, rather than the install
+script failing. Pterodactyl runs the installer in a throwaway container, and if your
+node cannot pull that container image, you get no output and no files.
+
+The usual cause is Docker Hub, which limits anonymous pulls to 100 every 6 hours per
+address. A busy node hits that easily. This egg installs from
+`ghcr.io/pterodactyl/installers:debian` for that reason, because GitHub does not rate
+limit public pulls the same way.
+
+To see what really happened, look at the install log on the node, at
+`/var/log/pterodactyl/install/<server-uuid>.log`, or run `journalctl -u wings -n 200`.
+A pull problem shows up as `toomanyrequests` or `manifest unknown`. A script problem
+prints a line starting with `!!!` naming the line it died on.
 
 ## Things worth knowing
 
