@@ -25,12 +25,9 @@ def main() -> int:
     egg = json.loads(TEMPLATE.read_text(encoding="utf-8"))
     egg["exported_at"] = datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0).isoformat()
     egg["scripts"]["installation"]["script"] = INSTALL.read_text(encoding="utf-8")
-    egg["docker_images"] = {
-        name: image.replace("ghcr.io/OWNER/cfx-server-wine:latest", reference)
-        for name, image in egg["docker_images"].items()
-    }
+    egg["docker_images"] = {reference: reference}
 
-    if any("OWNER" in image for image in egg["docker_images"].values()):
+    if "OWNER" in reference:
         print("placeholder owner survived rendering", file=sys.stderr)
         return 1
 

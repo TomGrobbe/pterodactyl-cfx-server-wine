@@ -1,0 +1,45 @@
+name: test install
+
+on:
+  push:
+    paths:
+      - 'scripts/install.sh'
+      - '.github/workflows/test-install.yml'
+  pull_request:
+    paths:
+      - 'scripts/install.sh'
+      - '.github/workflows/test-install.yml'
+  workflow_dispatch:
+
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run the installer the way wings runs it
+        run: |
+          mkdir -p "${GITHUB_WORKSPACE}/testserver"
+          docker run --rm \
+            -v "${GITHUB_WORKSPACE}/scripts:/mnt/install:ro" \
+            -v "${GITHUB_WORKSPACE}/testserver:/mnt/server" \
+            -e SERVER_PORT=30120 \
+            -e CFX_CHANNEL=main \
+            -e CORECLR_CHANNEL=csharp_improvements \
+            -e DOWNLOAD_SERVER_DATA=1 \
+            --entrypoint bash \
+            debian:trixie-slim \
+            /mnt/install/install.sh
+
+      - name: Check what actually landed on disk
+        run: |
+          ls -la testserver
+          test -f testserver/cfx-server.exe
+          test -f testserver/libnode26.dll
+          test -f testserver/server.cfg
+          test -f testserver/coreclr_server/CitizenFX.Host.Server.dll
+          test -d testserver/system_resources/chat
+          test -d testserver/resources
+          test -f testserver/.cfx-build
+          cat testserver/.cfx-build
+          echo "file count: $(find testserver -type f | wc -l)"

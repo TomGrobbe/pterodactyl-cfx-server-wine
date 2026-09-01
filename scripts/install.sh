@@ -2,6 +2,8 @@
 
 set -euo pipefail
 
+export DEBIAN_FRONTEND=noninteractive
+
 DEPOT_BASE="https://depot.cfx.re/public/p/fxserver_gen9/u"
 ARTIFACT="cfx-server_win_x64.zip"
 SERVER_DATA_URL="https://github.com/citizenfx/cfx-server-data/archive/refs/heads/master.zip"
@@ -118,3 +120,5 @@ printf 'base %s (build %s), coreclr %s (build %s)\n' \
     "${CORECLR_CHANNEL}" "${CORECLR_BUILD:-unknown}" > "${SERVER_DIR}/.cfx-build"
 
 echo "==> done: $(cat "${SERVER_DIR}/.cfx-build")"
+echo "==> contents of ${SERVER_DIR}"
+ls -la "${SERVER_DIR}"

@@ -9,7 +9,7 @@
     "description": "Runs the Cfx for GTA V Enhanced Windows server (cfx-server.exe) under Wine on Linux. The base server is pulled from the Cfx depot 'main' channel, while everything inside coreclr_server is replaced with the 'csharp_improvements' build.",
     "features": [],
     "docker_images": {
-        "Wine 11.16 (Cfx Enhanced)": "ghcr.io/OWNER/cfx-server-wine:latest"
+        "ghcr.io/OWNER/cfx-server-wine:latest": "ghcr.io/OWNER/cfx-server-wine:latest"
     },
     "file_denylist": [],
     "startup": "wine cfx-server.exe +exec server.cfg",
