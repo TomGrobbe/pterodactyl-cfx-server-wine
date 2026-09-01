@@ -27,6 +27,7 @@ jobs:
         run: |
           mkdir -p "${GITHUB_WORKSPACE}/testserver"
           docker run --rm \
+            --tmpfs /tmp:rw,exec,nosuid,size=100M \
             -v "${GITHUB_WORKSPACE}/scripts:/mnt/install:ro" \
             -v "${GITHUB_WORKSPACE}/testserver:/mnt/server" \
             -e SERVER_PORT=30120 \
