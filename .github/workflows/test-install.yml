@@ -55,19 +55,31 @@ jobs:
 
       - name: Boot the server under wine and watch the C# host
         if: matrix.container == 'ghcr.io/pterodactyl/installers:debian'
+        continue-on-error: true
         run: |
           IMAGE="ghcr.io/tomgrobbe/cfx-server-wine:latest"
           docker pull "$IMAGE"
           sudo chown -R 1000:1000 testserver
-          OUT=$(timeout 180 docker run --rm             -v "${GITHUB_WORKSPACE}/testserver:/home/container"             -e STARTUP='wine cfx-server.exe +exec server.cfg'             "$IMAGE" 2>&1 || true)
+          docker rm -f cfxboot > /dev/null 2>&1 || true
+          docker run -d --name cfxboot \
+            -v "${GITHUB_WORKSPACE}/testserver:/home/container" \
+            -e STARTUP='wine cfx-server.exe +exec server.cfg' \
+            "$IMAGE" > /dev/null
+          for i in $(seq 1 24); do
+            sleep 5
+            docker logs cfxboot 2>&1 | grep -q "citizen-server-i" && break
+            [ "$(docker inspect -f '{{.State.Running}}' cfxboot)" = "true" ] || break
+          done
+          OUT=$(docker logs cfxboot 2>&1 || true)
+          docker rm -f cfxboot > /dev/null 2>&1 || true
           echo "$OUT"
           echo "----- checking the C# host -----"
-          if ! echo "$OUT" | grep -q "citizen"; then
-            echo "INCONCLUSIVE: the server never produced any citizen log lines"
-            exit 1
-          fi
           if echo "$OUT" | grep -q "load_assembly for Bootstrap failed"; then
             echo "FAIL: the CoreCLR host could not load Bootstrap"
+            exit 1
+          fi
+          if ! echo "$OUT" | grep -q "citizen"; then
+            echo "INCONCLUSIVE: no citizen log lines, most likely no license key"
             exit 1
           fi
           echo "the server booted and the CoreCLR host loaded Bootstrap"

@@ -86,6 +86,7 @@ jobs:
           docker image rm "$IMAGE" > /dev/null 2>&1 || true
           docker pull "$IMAGE"
           docker run --rm --entrypoint bash "$IMAGE" -c 'wine --version'
+          docker run --rm --entrypoint bash "$IMAGE" -c 'case "$WINEDLLOVERRIDES" in *mscoree*) echo "mscoree is disabled, the CoreCLR host will not load"; exit 1;; esac; find /opt/wine-devel -name mscoree.dll | head -1 | grep .'
           MISSING=$(docker run --rm -e STARTUP='wine cfx-server.exe +exec server.cfg' "$IMAGE" 2>&1 || true)
           echo "$MISSING"
           echo "$MISSING" | grep -q "is not in /home/container"
